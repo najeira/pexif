@@ -524,6 +524,21 @@ class IfdData:
                       (self.tags.get(tag, (hex(tag), 0))[0], data)
         print >> f, indent + "<--- %s end --->" % self.name
 
+    def to_dict(self):
+        ret = {}
+        for tag, exif_type, data in self.entries:
+            if exif_type == ASCII:
+                data = data.strip('\0')
+            if (self.isifd(data)):
+                ret.update(data.to_dict())
+            else:
+                if data and len(data) == 1:
+                    data = data[0]
+                tag_val = self.tags.get(tag)
+                name = tag_val[1] if tag_val else hex(tag)
+                ret[name] = data
+        return ret
+
 class IfdInterop(IfdData):
     name = "Interop"
     tags = {
@@ -746,8 +761,11 @@ class IfdTIFF(IfdData):
     name = "TIFF Ifd"
 
     def special_handler(self, tag, data):
-        if self.tags[tag][1] == "Make":
-            self.exif_file.make = data.strip('\0')
+        try:
+            if self.tags[tag][1] == "Make":
+                self.exif_file.make = data.strip('\0')
+        except KeyError:
+            pass # Unknown tag
 
     def new_gps(self):
         if self.has_key(GPSIFD):
@@ -857,6 +875,14 @@ class ExifSegment(DefaultSegment):
               (len(self.data))
         for ifd in self.ifds:
             ifd.dump(fd)
+
+    def to_dict(self):
+        ret = {}
+        for ifd in self.ifds:
+            ifd_dic = ifd.to_dict()
+            if ifd_dic:
+                ret.update(ifd_dic)
+        return ret
 
     def get_data(self):
         ifds_data = ""
@@ -1070,6 +1096,12 @@ class JpegFile:
 
     exif = property(_get_exif)
 
+    def _get_exif_dict(self):
+        exif = self.get_exif(False)
+        return exif.to_dict() if exif else {}
+
+    exif_dict = property(_get_exif_dict)
+
     def get_geo(self):
         """Return a tuple of (latitude, longitude)."""
         def convert(x):
@@ -1132,3 +1164,12 @@ class JpegFile:
         gps.GPSLongitude = [Rational(deg, 1), Rational(min, 1),
                              Rational(sec, JpegFile.SEC_DEN)]
 
+if __name__ == '__main__':
+    import sys
+    
+    filename = sys.argv[-1]
+    print filename + ':'
+    #file = open(filename, 'rb')
+    obj = JpegFile.fromFile(filename)
+    for name, value in obj.exif_dict.iteritems():
+        print name, value
