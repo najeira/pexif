@@ -476,7 +476,12 @@ class IfdData:
                 byte_size = exif_type_size(exif_type) * components
             
             if exif_type == BYTE or exif_type == UNDEFINED:
-                actual_data = base64.b64decode(the_data)
+                if isinstance(the_data, list):
+                    actual_data = "".join(the_data)
+                else:
+                    actual_data = base64.b64decode(the_data)
+                    magic_components = components = len(actual_data)
+                    byte_size = exif_type_size(exif_type) * components
             elif exif_type == ASCII:
                 actual_data = the_data 
             elif exif_type == SHORT:
