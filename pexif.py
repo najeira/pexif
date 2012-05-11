@@ -476,7 +476,7 @@ class IfdData:
                 byte_size = exif_type_size(exif_type) * components
             
             if exif_type == BYTE or exif_type == UNDEFINED:
-                actual_data = base64.b64decod(the_data)
+                actual_data = base64.b64decode(the_data)
             elif exif_type == ASCII:
                 actual_data = the_data 
             elif exif_type == SHORT:
@@ -492,7 +492,7 @@ class IfdData:
                 for i in range(components):
                     actual_data += pack(e + t, *the_data[i].as_tuple())
             else:
-                raise "Can't handle this", exif_type
+                continue
             if (byte_size) > 4:
                 output_data += actual_data
                 actual_data = pack(e + "I", data_offset) 
