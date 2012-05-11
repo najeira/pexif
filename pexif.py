@@ -93,9 +93,10 @@ except AttributeError:
 
 """
 
+import base64
 import StringIO
 import sys
-from struct import unpack, pack
+from struct import unpack, pack, error as struct_error
 
 MAX_HEADER_SIZE = 64 * 1024
 DELIM = 0xff
@@ -219,12 +220,13 @@ SHORT = ExifType(3, "short", 2).id
 LONG = ExifType(4, "long", 4).id
 RATIONAL = ExifType(5, "rational", 8).id
 UNDEFINED = ExifType(7, "undefined", 1).id
+SSHORT = ExifType(8, "short", 2).id
 SLONG = ExifType(9, "slong", 4).id
 SRATIONAL = ExifType(10, "srational", 8).id
 
 def exif_type_size(exif_type):
     """Return the size of a type"""
-    return ExifType.lookup.get(exif_type).size
+    return ExifType.lookup[exif_type].size
 
 class Rational:
     """A simple fraction class. Python 2.6 could use the inbuilt Fraction class."""
@@ -353,6 +355,12 @@ class IfdData:
         return
 
     def __init__(self, e, offset, exif_file, mode, data = None):
+        try:
+            self.parse_data(e, offset, exif_file, mode, data)
+        except struct_error:
+            pass
+
+    def parse_data(self, e, offset, exif_file, mode, data = None):
         self.exif_file = exif_file
         self.mode = mode
         self.e = e
@@ -389,7 +397,7 @@ class IfdData:
                     the_data = data[start+8:start+8+byte_size]
 
                 if exif_type == BYTE or exif_type == UNDEFINED:
-                    actual_data = list(the_data)
+                    actual_data = base64.b64encode(the_data)
                 elif exif_type == ASCII:
                     if the_data[-1] != '\0':
                         actual_data = the_data + '\0'
@@ -468,7 +476,7 @@ class IfdData:
                 byte_size = exif_type_size(exif_type) * components
             
             if exif_type == BYTE or exif_type == UNDEFINED:
-                actual_data = "".join(the_data)
+                actual_data = base64.b64decod(the_data)
             elif exif_type == ASCII:
                 actual_data = the_data 
             elif exif_type == SHORT:
@@ -868,8 +876,14 @@ class ExifSegment(DefaultSegment):
                 raise JpegFile.InvalidFile()
             self.ifds.append(ifd)
 
+            if (start + 4) > len(tiff_data):
+                break
+
             # Get next offset
             offset = unpack(self.e + "I", tiff_data[start:start+4])[0]
+
+            if (offset + 2) > len(tiff_data):
+                break
 
     def dump(self, fd):
         print >> fd, " Section: [ EXIF] Size: %6d" % \
@@ -1018,6 +1032,8 @@ class JpegFile:
                 # Hit end of image marker, game-over!
                 break
             head2 = input.read(2)
+            if len(head2) != 2:
+                break
             size = unpack(">H", head2)[0]
             data = input.read(size-2)
             possible_segment_classes = jpeg_markers[mark][1] + [DefaultSegment]
