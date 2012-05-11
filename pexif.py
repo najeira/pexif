@@ -379,6 +379,8 @@ class IfdData:
             if tag in self.embedded_tags:
                 actual_data = self.embedded_tags[tag][1](e, the_data,
                                                          exif_file, self.mode, data)
+                if not actual_data:
+                    continue
             else:
                 if byte_size > 4:
                     debug(" ...offset %s" % the_data)
@@ -413,7 +415,7 @@ class IfdData:
                                                             the_data[i*8:
                                                                      i*8+8])))
                 else:
-                    raise "Can't handle this"
+                    continue
 
                 if (byte_size > 4):
                     debug("%s" % actual_data)
@@ -616,8 +618,7 @@ def ifd_maker_note(e, offset, exif_file, mode, data):
         ifd_data = data[offset:]
         return FujiIFD(e, ifd_offset, exif_file, mode, ifd_data)
     else:
-        raise JpegFile.InvalidFile("Unknown maker: %s. Can't "\
-                                   "currently handle this." % exif_file.make)
+        return None
 
 class IfdGPS(IfdData):
     name = "GPS"
