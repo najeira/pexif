@@ -245,7 +245,7 @@ class Rational:
 class IfdData:
     """Base class for IFD"""
     
-    name = "Generic Ifd"
+    name = "Ifd"
     tags = {}
     embedded_tags = {}
 
@@ -535,7 +535,7 @@ class IfdData:
                 if data and len(data) == 1:
                     data = data[0]
                 tag_val = self.tags.get(tag)
-                name = tag_val[0] if tag_val else hex(tag)
+                name = tag_val[1] if tag_val else hex(tag)
                 ret[self.name + " " + name] = data
         return ret
 
@@ -705,7 +705,7 @@ class IfdExtendedEXIF(IfdData):
     embedded_tags = {
         0x927c: ("MakerNote", ifd_maker_note),
         }
-    name = "Extended EXIF"
+    name = "EXIF"
 
 class IfdTIFF(IfdData):
     """
@@ -758,7 +758,7 @@ class IfdTIFF(IfdData):
         0x8825: ("GPS", IfdGPS),
         }
 
-    name = "TIFF Ifd"
+    name = "TIFF"
 
     def special_handler(self, tag, data):
         try:
