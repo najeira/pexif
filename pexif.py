@@ -535,8 +535,8 @@ class IfdData:
                 if data and len(data) == 1:
                     data = data[0]
                 tag_val = self.tags.get(tag)
-                name = tag_val[1] if tag_val else hex(tag)
-                ret[name] = data
+                name = tag_val[0] if tag_val else hex(tag)
+                ret[self.name + " " + name] = data
         return ret
 
 class IfdInterop(IfdData):
