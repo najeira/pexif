@@ -219,6 +219,7 @@ ASCII = ExifType(2, "ascii", 1).id
 SHORT = ExifType(3, "short", 2).id
 LONG = ExifType(4, "long", 4).id
 RATIONAL = ExifType(5, "rational", 8).id
+SBYTE = ExifType(6, "byte", 1).id
 UNDEFINED = ExifType(7, "undefined", 1).id
 SSHORT = ExifType(8, "short", 2).id
 SLONG = ExifType(9, "slong", 4).id
